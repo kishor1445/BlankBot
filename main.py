@@ -15,6 +15,7 @@ class BlankBot(commands.Bot):
         *args,
         initial_extensions: List[str],
         web_client: ClientSession,
+        unknown_error_webhook_url: str,
         testing_guild_id: Optional[int] = None,
         **kwargs,
     ):
@@ -22,6 +23,7 @@ class BlankBot(commands.Bot):
         self.web_client = web_client
         self.testing_guild_id = testing_guild_id
         self.initial_extensions = initial_extensions
+        self.unknown_error_webhook_url = unknown_error_webhook_url
 
     async def setup_hook(self) -> None:
         for extension in self.initial_extensions:
@@ -44,7 +46,10 @@ async def main():
             if x.endswith(".py") and not x.startswith("_")
         ]
         async with BlankBot(
-            command_prefix="^", web_client=our_client, initial_extensions=extensions
+            command_prefix="^",
+            web_client=our_client,
+            initial_extensions=extensions,
+            unknown_error_webhook_url=os.getenv("UNKNOWN_ERROR_WEBHOOK_URL", ""),
         ) as bot:
             await bot.start(os.getenv("DISCORD_BOT_TOKEN", ""))
 
