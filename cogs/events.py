@@ -49,14 +49,10 @@ class Events(commands.Cog):
             embed.description = "This command can't be used in DMs!"
         elif isinstance(error, commands.DisabledCommand):
             embed.description = "This command is disabled!"
-        elif isinstance(error, commands.CommandInvokeError):
-            embed.description = "An error occurred while running this command!"
         elif isinstance(error, commands.TooManyArguments):
             embed.description = "You gave me too many arguments!"
         elif isinstance(error, commands.UserInputError):
             embed.description = "You gave me bad input!"
-        elif isinstance(error, commands.CommandError):
-            embed.description = "An error occurred while running this command!"
         else:
             web_hook = Webhook.from_url(
                 self.bot.unknown_error_webhook_url, session=self.bot.web_client
