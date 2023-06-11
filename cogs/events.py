@@ -27,7 +27,7 @@ class Events(commands.Cog):
             )
         elif isinstance(error, commands.CommandNotFound):
             embed.description = (
-                "That command doesn't exist! use `^suggest` to suggest a command."
+                "That command doesn't exist! use `suggest` command to suggest a command."
             )
         elif isinstance(error, commands.MissingRequiredArgument):
             embed.description = (
@@ -70,6 +70,12 @@ class Events(commands.Cog):
             embed.description = "An unknown error occurred!"
 
         await ctx.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_error(self, event_method, *args, **kwargs):
+        print(event_method)
+        print(args)
+        print(kwargs)
 
 
 async def setup(bot):
