@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-
+from discord import app_commands
 
 class Mod(commands.Cog):
     def __init__(self, bot):
@@ -33,7 +33,7 @@ class Mod(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *, reason=None):
+    async def ban(self, ctx, member: discord.Member, *, reason: str=None):
         if member == ctx.guild.owner:
             await ctx.send("You can't ban the owner of the server!")
             return
