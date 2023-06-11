@@ -47,9 +47,7 @@ class Improvement(commands.Cog):
 
     @app_commands.command(name="suggest", description="Suggest a feature for the bot!")
     async def suggest_slash(self, interaction: discord.Interaction):
-        print("Activated")
         await interaction.response.send_modal(SuggestionModal(self.bot))
-        print("Finished")
 
 
 async def setup(bot):
