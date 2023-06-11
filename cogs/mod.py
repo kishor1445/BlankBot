@@ -56,6 +56,24 @@ class Mod(commands.Cog):
             await member.ban(reason=reason)
             await ctx.send(f"Banned {member} for {reason}")
 
+    @commands.command()
+    async def server_info(self, ctx):
+        embed = discord.Embed(
+            title=ctx.guild.name,
+            description=ctx.guild.description,
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="Server Owner", value=f"{ctx.guild.owner.mention}")
+        embed.add_field(name="Server ID", value=f"{ctx.guild.id}")
+        embed.add_field(name="Server Created At", value=f"{ctx.guild.created_at.strftime('%m/%d/%Y, %I:%M %p UTC')}", inline=False)
+        embed.add_field(name="Member Count", value=f"{ctx.guild.member_count}")
+        embed.add_field(name="No. of channels", value=f"{len(ctx.guild.channels)}")
+        embed.add_field(name="No. of roles", value=f"{len(ctx.guild.roles)}")
+        embed.set_author(name=f"{ctx.guild.owner}", icon_url=f"{ctx.guild.owner.avatar.url}")
+        if ctx.guild.icon:
+            embed.set_thumbnail(url=f"{ctx.guild.icon.url}")
+        await ctx.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(Mod(bot))
