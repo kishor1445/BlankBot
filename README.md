@@ -35,3 +35,4 @@ TEST_GUILD_ID=your test guild id
 4. Run the bot using `python bot.py`
 5. Enjoy!
 
+If you like this project, please consider giving it a star ⭐ <3
