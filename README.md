@@ -6,9 +6,9 @@ A discord bot written in python using the discord.py library.
 
 ## Features
 - [x] Moderation
-    - [x] Kick*
-    - [x] Ban*
-    - [x] Server Info*
+    - [x] Kick**
+    - [x] Ban**
+    - [x] Server Info**
     - [x] No discord invite links
     - [ ] Mute
     - [ ] Unmute
@@ -18,6 +18,11 @@ A discord bot written in python using the discord.py library.
     - [ ] Slow mode
     - [ ] Lockdown
     - [ ] Unlock-down
+- [x] Improvement
+    - [x] Suggestions
+    - [ ] Bug reports
+
+** Slash commands and Application commands are not implemented yet, but will be soon!
 
 ## Installation
 1. Clone the repository
