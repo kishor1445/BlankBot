@@ -1,5 +1,6 @@
 import asyncio
 import discord
+import re
 from discord.ext import commands
 from discord import Webhook
 
@@ -72,6 +73,19 @@ class Events(commands.Cog):
         print(event_method)
         print(args)
         print(kwargs)
+
+    @commands.Cog.listener()
+    async def on_message(self, msg):
+        if msg.author == self.bot.user:
+            return
+        discord_link_pattern = re.compile(
+            r"(https?://)?(www\.)?(discord\.(gg|io|me|li)|discordapp\.com/invite)/.+[a-z]"
+        )
+        if discord_link_pattern.search(msg.content):
+            await msg.delete()
+            await msg.channel.send(
+                f"{msg.author.mention}, you can't send discord invite links here!"
+            )
 
 
 async def setup(bot):
