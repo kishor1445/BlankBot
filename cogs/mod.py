@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 
 
 class Mod(commands.Cog):
@@ -33,7 +34,7 @@ class Mod(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *, reason: str=None):
+    async def ban(self, ctx, member: discord.Member, *, reason: str = None):
         if member == ctx.guild.owner:
             await ctx.send("You can't ban the owner of the server!")
             return
@@ -56,23 +57,36 @@ class Mod(commands.Cog):
             await member.ban(reason=reason)
             await ctx.send(f"Banned {member} for {reason}")
 
+    @staticmethod
+    async def _server_info_embed(guild: discord.Guild):
+        embed = discord.Embed(
+            title=guild.name, description=guild.description, color=discord.Color.blue()
+        )
+        embed.add_field(name="Server Owner", value=f"{guild.owner.mention}")
+        embed.add_field(name="Server ID", value=f"{guild.id}")
+        embed.add_field(
+            name="Server Created At",
+            value=f"{guild.created_at.strftime('%m/%d/%Y, %I:%M %p UTC')}",
+            inline=False,
+        )
+        embed.add_field(name="Member Count", value=f"{guild.member_count}")
+        embed.add_field(name="No. of roles", value=f"{len(guild.roles) - 1}")
+        embed.add_field(name="No. of text channels", value=f"{len(guild.text_channels)}")
+        embed.add_field(name="No. of voice channels", value=f"{len(guild.voice_channels)}")
+        embed.set_author(name=f"{guild.owner}", icon_url=f"{guild.owner.avatar.url}")
+        if guild.icon:
+            embed.set_thumbnail(url=f"{guild.icon.url}")
+        return embed
+
     @commands.command()
     async def server_info(self, ctx):
-        embed = discord.Embed(
-            title=ctx.guild.name,
-            description=ctx.guild.description,
-            color=discord.Color.blue()
+        await ctx.send(embed=await self._server_info_embed(ctx.guild))
+
+    @app_commands.command(name="server_info", description="Get info about the server")
+    async def server_info_slash(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            embed=await self._server_info_embed(interaction.guild)
         )
-        embed.add_field(name="Server Owner", value=f"{ctx.guild.owner.mention}")
-        embed.add_field(name="Server ID", value=f"{ctx.guild.id}")
-        embed.add_field(name="Server Created At", value=f"{ctx.guild.created_at.strftime('%m/%d/%Y, %I:%M %p UTC')}", inline=False)
-        embed.add_field(name="Member Count", value=f"{ctx.guild.member_count}")
-        embed.add_field(name="No. of channels", value=f"{len(ctx.guild.channels)}")
-        embed.add_field(name="No. of roles", value=f"{len(ctx.guild.roles)}")
-        embed.set_author(name=f"{ctx.guild.owner}", icon_url=f"{ctx.guild.owner.avatar.url}")
-        if ctx.guild.icon:
-            embed.set_thumbnail(url=f"{ctx.guild.icon.url}")
-        await ctx.send(embed=embed)
 
 
 async def setup(bot):
