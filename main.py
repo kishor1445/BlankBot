@@ -20,7 +20,15 @@ class BlankBot(commands.Bot):
         testing_guild_id: Optional[int] = None,
         **kwargs,
     ):
-        super().__init__(*args, intents=discord.Intents.all(), **kwargs)
+        super().__init__(
+            *args,
+            intents=discord.Intents.all(),
+            activity=discord.Activity(
+                name="BlankPower", type=discord.ActivityType.listening
+            ),
+            status=discord.Status.idle,
+            **kwargs,
+        )
         self.web_client = web_client
         self.testing_guild_id = testing_guild_id
         self.initial_extensions = initial_extensions
