@@ -52,6 +52,9 @@ class Improvement(commands.Cog):
     async def suggest_slash(self, interaction: discord.Interaction):
         await interaction.response.send_modal(SuggestionModal(self.bot))
 
+    @commands.command(name="suggest", description="Suggest a feature for the bot!")
+    async def suggest(self, ctx):
+        await ctx.send("Please use the slash command for this!")
 
 async def setup(bot):
     await bot.add_cog(
