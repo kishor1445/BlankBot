@@ -27,9 +27,7 @@ class Events(commands.Cog):
                 "I don't have the required permissions to run this command."
             )
         elif isinstance(error, commands.CommandNotFound):
-            embed.description = (
-                "That command doesn't exist! use `suggest` command to suggest a command."
-            )
+            embed.description = "That command doesn't exist! use `suggest` command to suggest a command."
         elif isinstance(error, commands.MissingRequiredArgument):
             embed.description = (
                 "You're missing a required argument! Check the help command."
