@@ -10,13 +10,16 @@ class SuggestionModal(ui.Modal, title="Suggest a feature"):
     def __init__(self, bot):
         self.bot = bot
         super().__init__()
+
     feature = ui.TextInput(
         label="What feature would you like to suggest?", style=discord.TextStyle.short
     )
     description = ui.TextInput(label="Description:", style=discord.TextStyle.paragraph)
 
     async def on_submit(self, interaction: discord.Interaction):
-        web_hook = Webhook.from_url(os.getenv("SUGGESTION_WEBHOOK_URL", ""), session=self.bot.web_client)
+        web_hook = Webhook.from_url(
+            os.getenv("SUGGESTION_WEBHOOK_URL", ""), session=self.bot.web_client
+        )
         await web_hook.send(
             f"Author: {interaction.user} [{interaction.user.id}]\n\nFeature: {self.feature}\n\n"
             f"Description: {self.description}"
@@ -32,10 +35,12 @@ class SuggestionModal(ui.Modal, title="Suggest a feature"):
             "Oops! Something went wrong.", ephemeral=True
         )
 
-        web_hook = Webhook.from_url(os.getenv("UNKNOWN_ERROR_WEBHOOK_URL", ""), session=self.bot.web_client)
+        web_hook = Webhook.from_url(
+            os.getenv("UNKNOWN_ERROR_WEBHOOK_URL", ""), session=self.bot.web_client
+        )
         await web_hook.send(
             f"Type: {type(error)}\n\nError: {error}\n\nAuthor: {interaction.user} [{interaction.user.id}]",
-            username="Error in Suggestion Modal || Webhook"
+            username="Error in Suggestion Modal || Webhook",
         )
 
 
