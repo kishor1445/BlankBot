@@ -71,8 +71,12 @@ class Mod(commands.Cog):
         )
         embed.add_field(name="Member Count", value=f"{guild.member_count}")
         embed.add_field(name="No. of roles", value=f"{len(guild.roles) - 1}")
-        embed.add_field(name="No. of text channels", value=f"{len(guild.text_channels)}")
-        embed.add_field(name="No. of voice channels", value=f"{len(guild.voice_channels)}")
+        embed.add_field(
+            name="No. of text channels", value=f"{len(guild.text_channels)}"
+        )
+        embed.add_field(
+            name="No. of voice channels", value=f"{len(guild.voice_channels)}"
+        )
         embed.set_author(name=f"{guild.owner}", icon_url=f"{guild.owner.avatar.url}")
         if guild.icon:
             embed.set_thumbnail(url=f"{guild.icon.url}")
