@@ -58,5 +58,5 @@ class Improvement(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(
-        Improvement(bot), guild=discord.Object(int(os.getenv("TEST_GUILD_ID")))
+        Improvement(bot)
     )
