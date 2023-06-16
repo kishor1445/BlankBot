@@ -20,10 +20,17 @@ class SuggestionModal(ui.Modal, title="Suggest a feature"):
         web_hook = Webhook.from_url(
             os.getenv("SUGGESTION_WEBHOOK_URL", ""), session=self.bot.web_client
         )
-        await web_hook.send(
-            f"Author: {interaction.user} [{interaction.user.id}]\n\nFeature: {self.feature}\n\n"
-            f"Description: {self.description}"
+        embed = discord.Embed(
+            title="New Suggestion!",
+            description=f"Feature: {self.feature}\n\nDescription: " + str(self.description),
+            colour=discord.Colour.blurple()
         )
+        embed.set_footer(text=f"Author: {interaction.user} [{interaction.user.id}]",
+                         icon_url=interaction.user.avatar.url)
+        embed.add_field(name="Server", value=f"{interaction.guild} [{interaction.guild.id}]")
+        embed.add_field(name="Channel", value=f"{interaction.channel} [{interaction.channel.id}]")
+        embed.add_field(name="Timestamp", value=f"{interaction.created_at}")
+        await web_hook.send(embed=embed, username="Suggestion || Webhook")
         await interaction.response.send_message(
             "Thanks for your feedback!", ephemeral=True
         )
@@ -56,7 +63,6 @@ class Improvement(commands.Cog):
     async def suggest(self, ctx):
         await ctx.send("Please use the slash command for this!")
 
+
 async def setup(bot):
-    await bot.add_cog(
-        Improvement(bot), guild=discord.Object(int(os.getenv("TEST_GUILD_ID")))
-    )
+    await bot.add_cog(Improvement(bot))
