@@ -18,6 +18,10 @@ class Events(commands.Cog):
         )
         if isinstance(error, asyncio.TimeoutError):
             embed.description = "You took too long to respond! I can't wait forever."
+        elif isinstance(error, commands.NotOwner):
+            embed.description = (
+                "You're not the owner of this bot! Only the owner can run this command."
+            )
         elif isinstance(error, commands.MissingPermissions):
             embed.description = (
                 "You don't have the required permissions to run this command."
@@ -34,10 +38,6 @@ class Events(commands.Cog):
             )
         elif isinstance(error, commands.BadArgument):
             embed.description = "You gave me a bad argument! Check the help command."
-        elif isinstance(error, commands.NotOwner):
-            embed.description = (
-                "You're not the owner of this bot! Only the owner can run this command."
-            )
         elif isinstance(error, commands.CheckFailure):
             embed.description = "You don't have permission to run this command!"
         elif isinstance(error, commands.CommandOnCooldown):
@@ -84,6 +84,8 @@ class Events(commands.Cog):
             await msg.channel.send(
                 f"{msg.author.mention}, you can't send discord invite links here!"
             )
+        if msg.content.lower() in ["sans", "sanjay"]:
+            await msg.reply("he is gay")
 
 
 async def setup(bot):
