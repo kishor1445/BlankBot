@@ -38,11 +38,9 @@ class BlankBot(commands.Bot):
     async def setup_hook(self) -> None:
         for extension in self.initial_extensions:
             await self.load_extension(extension)
+        await self.tree.sync()
 
-        if self.testing_guild_id:
-            guild = discord.Object(self.testing_guild_id)
-            self.tree.copy_global_to(guild=guild)
-            await self.tree.sync(guild=guild)
+        
 
     async def on_ready(self):
         print(f"Logged in as {self.user} [ID: {self.user.id}]")
@@ -75,7 +73,6 @@ async def main():
             command_prefix="^",
             web_client=our_client,
             initial_extensions=extensions,
-            testing_guild_id=int(os.getenv("TEST_GUILD_ID", 0)),
         ) as bot:
             await bot.start(os.getenv("DISCORD_BOT_TOKEN", ""))
 
