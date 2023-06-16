@@ -21,6 +21,8 @@ A discord bot written in python using the discord.py library.
 - [x] Improvement
     - [x] Suggestions
     - [ ] Bug reports
+- [ ] Utilities
+    - [ ] Custom prefix
 
 ** Slash commands and Application commands are not implemented yet, but will be soon!
 
