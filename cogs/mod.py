@@ -10,7 +10,7 @@ class Confirm(discord.ui.View):
         self.user_id = user_id
 
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.red, custom_id="confirm_btn")
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def confirm(self, interaction: discord.Interaction, _):
         self.value = True
         for x in self.children:
             x.disabled = True
@@ -20,7 +20,7 @@ class Confirm(discord.ui.View):
         self.stop()
 
     @discord.ui.button(label="No", style=discord.ButtonStyle.green, custom_id="cancel_btn")
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def cancel(self, interaction: discord.Interaction, _):
         self.value = False
         for x in self.children:
             x.disabled = True
@@ -142,16 +142,16 @@ class Mod(commands.Cog):
             )
             await view.wait()
             if view.value is None:
-                await interaction.message.send_message("Timed out.")
+                await interaction.followup.send("Timed out.")
                 return
             elif view.value:
-                await interaction.message.send_message(
+                await interaction.followup.send(
                     embed=await self._kick(interaction.guild, member, reason)
                 )
             else:
-                await interaction.message.send_message("Cancelled.")
+                await interaction.followup.send("Cancelled.")
         else:
-            await interaction.message.send_message(
+            await interaction.response.send_message(
                 embed=await self._kick(interaction.guild, member, reason)
             )
 
@@ -174,25 +174,6 @@ class Mod(commands.Cog):
         else:
             await ctx.send(embed=await self._kick(ctx.guild, member, reason))
 
-    @kick_slash.error
-    async def kick_slash_error(self, interaction: discord.Interaction, error: Exception):
-        if isinstance(error, commands.MissingPermissions):
-            await interaction.response.send_message("You can't do that!")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await interaction.response.send_message(
-                "You need to specify a member to kick!"
-            )
-        elif isinstance(error, commands.MemberNotFound):
-            await interaction.response.send_message("Member not found!")
-        elif isinstance(error, commands.CommandInvokeError):
-            await interaction.response.send_message(
-                "I don't have permission to do that!"
-            )
-        else:
-            await interaction.response.send_message(
-                "An unknown error occurred. Please try again later."
-            )
-            raise error
 
 async def setup(bot):
     await bot.add_cog(Mod(bot))
