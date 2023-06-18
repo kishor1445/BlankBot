@@ -2,7 +2,11 @@ import asyncio
 import discord
 import re
 from discord.ext import commands
-from discord import Webhook
+from .Utils.report import report_error
+
+DISCORD_INVITE_LINK = re.compile(
+    r"(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)/?[a-zA-Z0-9]+/?"
+)
 
 
 class Events(commands.Cog):
@@ -15,6 +19,9 @@ class Events(commands.Cog):
             title="Error!",
             colour=discord.Colour.red(),
             timestamp=ctx.message.created_at,
+        )
+        embed.set_footer(
+            text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url
         )
         if isinstance(error, asyncio.TimeoutError):
             embed.description = "You took too long to respond! I can't wait forever."
@@ -31,11 +38,13 @@ class Events(commands.Cog):
                 "I don't have the required permissions to run this command."
             )
         elif isinstance(error, commands.CommandNotFound):
-            embed.description = "That command doesn't exist! use `suggest` command to suggest a command."
+            embed.description = "That command doesn't exist! use `suggest` slash command to suggest a command."
         elif isinstance(error, commands.MissingRequiredArgument):
             embed.description = (
                 "You're missing a required argument! Check the help command."
             )
+        elif isinstance(error, commands.MemberNotFound):
+            embed.description = "I couldn't find that member!"
         elif isinstance(error, commands.BadArgument):
             embed.description = "You gave me a bad argument! Check the help command."
         elif isinstance(error, commands.CheckFailure):
@@ -53,13 +62,14 @@ class Events(commands.Cog):
         elif isinstance(error, commands.UserInputError):
             embed.description = "You gave me bad input!"
         else:
-            web_hook = Webhook.from_url(
-                self.bot.unknown_error_webhook_url, session=self.bot.web_client
-            )
-            await web_hook.send(
-                f"Error: {error}\n\nContent: {ctx.message.content}\n\nAuthor: {ctx.author} [{ctx.author.id}]\n\n"
-                f"Guild: {ctx.guild} [{ctx.guild.id}]\n\nChannel: {ctx.channel} [{ctx.channel.id}]\n"
-                f"{'-'*50}",
+            await report_error(
+                error_webhook_url=self.bot.unknown_error_webhook_url,
+                session=self.bot.web_client,
+                error=error,
+                content=ctx.message.content,
+                author=ctx.author,
+                guild=ctx.guild,
+                channel=ctx.channel,
                 username="Unknown Error || BlankBot",
             )
             embed.description = "An unknown error occurred!"
@@ -67,25 +77,37 @@ class Events(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.Cog.listener()
-    async def on_error(self, event_method, *args, **kwargs):
-        print(event_method)
-        print(args)
-        print(kwargs)
-
-    @commands.Cog.listener()
     async def on_message(self, msg):
-        if msg.author == self.bot.user:
+        if msg.author.bot:
             return
-        discord_link_pattern = re.compile(
-            r"(https?://)?(www\.)?(discord\.(gg|io|me|li)|discordapp\.com/invite)/.+[a-z]"
-        )
-        if discord_link_pattern.search(msg.content):
+        if isinstance(msg.channel, discord.DMChannel):
+            if re.search(r"(happy|belated) birthday", msg.content.lower()):
+                if self.bot.birthday:
+                    await msg.reply("Thank you! ❤️ ^^")
+                    return
+                await msg.reply(
+                    "Today is not my birthday! My birthday is on 11th of June"
+                )
+
+        if (
+            DISCORD_INVITE_LINK.search(msg.content)
+            and not msg.author == msg.guild.owner
+        ):
             await msg.delete()
             await msg.channel.send(
                 f"{msg.author.mention}, you can't send discord invite links here!"
             )
-        if msg.content.lower() in ["sans", "sanjay"]:
-            await msg.reply("he is gay")
+
+        msg_ = msg.content.split()[0]
+        if msg_ == f"<@!{self.bot.user.id}>" or msg_ == f"<@{self.bot.user.id}>":
+            db = self.bot.cluster["guilds"]
+            collection = db["custom_prefix"]
+            data = collection.find_one({"_id": msg.guild.id})
+            if data is None:
+                prefix = "^"
+            else:
+                prefix = data["prefix"]
+            await msg.reply(f"My prefix for this server is `{prefix}`")
 
 
 async def setup(bot):
