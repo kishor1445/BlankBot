@@ -1,39 +1,10 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-
-
-class Confirm(discord.ui.View):
-    def __init__(self, user_id):
-        super().__init__(timeout=30)
-        self.value = None
-        self.user_id = user_id
-
-    @discord.ui.button(label="Yes", style=discord.ButtonStyle.red, custom_id="confirm_btn")
-    async def confirm(self, interaction: discord.Interaction, _):
-        self.value = True
-        for x in self.children:
-            x.disabled = True
-            if x.custom_id == "cancel_btn":
-                x.style = discord.ButtonStyle.grey
-        await interaction.response.edit_message(view=self)
-        self.stop()
-
-    @discord.ui.button(label="No", style=discord.ButtonStyle.green, custom_id="cancel_btn")
-    async def cancel(self, interaction: discord.Interaction, _):
-        self.value = False
-        for x in self.children:
-            x.disabled = True
-            if x.custom_id == "confirm_btn":
-                x.style = discord.ButtonStyle.grey
-        await interaction.response.edit_message(view=self)
-        self.stop()
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id == self.user_id:
-            return True
-        await interaction.response.send_message("This is not for you!", ephemeral=True)
-        return False
+from datetime import datetime
+from typing import Any, Union
+from .Utils.report import report_error
+from .Utils.buttons import Confirm
 
 
 class Mod(commands.Cog):
@@ -41,89 +12,84 @@ class Mod(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *, reason: str = None):
-        if member == ctx.guild.owner:
-            await ctx.send("You can't ban the owner of the server!")
-            return
-        if member == self.bot.user:
-            await ctx.send("I can't ban myself! :(")
-            return
-        if member == ctx.author:
-            await ctx.send("Are you sure you want to ban yourself?")
-            res = await self.bot.wait_for(
-                "message",
-                timeout=20,
-                check=lambda m: m.author == ctx.author and m.channel == ctx.channel,
-            )
-            if res.content.lower() in ("yes", "y", "yeah", "yeh", "yah"):
-                await member.ban(reason=reason)
-                await ctx.send(f"Banned {member} for {reason}")
+    @commands.has_permissions(manage_messages=True)
+    async def set_prefix(self, ctx, prefix):
+        db = self.bot.cluster["guilds"]
+        collections = db["custom_prefix"]
+        print(collections.find_one({"_id": ctx.guild.id}))
+        if res := collections.find_one({"_id": ctx.guild.id}):
+            print(res["prefix"])
+            if res["prefix"] == prefix:
+                await ctx.send("That's already the prefix!")
+                return
             else:
-                await ctx.send("Cancelled.")
+                collections.update_one(
+                    {"_id": ctx.guild.id}, {"$set": {"prefix": prefix}}
+                )
+                await ctx.send(f"Changed prefix to `{prefix}`")
+        else:
+            collections.insert_one({"_id": ctx.guild.id, "prefix": prefix})
+            await ctx.send(f"Changed prefix to `{prefix}`")
+
+    async def _kick_ban(
+        self,
+        guild: discord.Guild,
+        member: discord.Member,
+        reason: str,
+        kick: bool = True,
+    ):
+        embed = discord.Embed(
+            title=f"{'Kicked' if kick else 'Banned'} Successfully",
+            colour=discord.Colour.red(),
+            timestamp=datetime.now(),
+        )
+        if member == guild.owner:
+            embed.description = (
+                f"You can't {'kick' if kick else 'ban'} the owner of the server!"
+            )
+            return embed
+        if member == self.bot.user:
+            embed.description = f"I can't {'kick' if kick else 'ban'} myself! :("
+            return embed
+        embed.description = f"{'Kicked' if kick else 'Banned'} {member} for {reason}"
+        embed.colour = discord.Colour.green()
+        if kick:
+            await member.kick(reason=reason)
         else:
             await member.ban(reason=reason)
-            await ctx.send(f"Banned {member} for {reason}")
-
-    @staticmethod
-    async def _server_info(guild: discord.Guild):
-        embed = (
-            discord.Embed(
-                title=guild.name,
-                description=guild.description,
-                color=discord.Color.blue(),
-            )
-            .add_field(name="Server Owner", value=f"{guild.owner.mention}")
-            .add_field(name="Server ID", value=f"{guild.id}")
-            .add_field(
-                name="Server Created At",
-                value=f"{guild.created_at.strftime('%m/%d/%Y, %I:%M %p UTC')}",
-                inline=False,
-            )
-            .add_field(name="Member Count", value=f"{guild.member_count}")
-            .add_field(name="No. of roles", value=f"{len(guild.roles) - 1}")
-            .add_field(name="No. of text channels", value=f"{len(guild.text_channels)}")
-            .add_field(
-                name="No. of voice channels", value=f"{len(guild.voice_channels)}"
-            )
-            .set_author(name=f"{guild.owner}", icon_url=f"{guild.owner.avatar.url}")
-        )
-        if guild.icon:
-            embed.set_thumbnail(url=f"{guild.icon.url}")
         return embed
 
-    async def _kick(self, guild: discord.Guild, member: discord.Member, reason: str):
-        if member == guild.owner:
-            embed = discord.Embed(
-                title="Kick Failed",
-                description="You can't kick the owner of the server!",
-                colour=discord.Colour.red(),
-            )
-            return embed
-        if member == self.bot.user:
-            embed = discord.Embed(
-                title="Kick Failed",
-                description="I can't kick myself! :(",
-                colour=discord.Colour.red(),
-            )
-            return embed
-        embed = discord.Embed(
-            title="Kick Successful",
-            description=f"Kicked {member} for {reason}",
-            colour=discord.Colour.green(),
+    async def _helper_kick_ban(
+        self,
+        ctx: Union[discord.Interaction, commands.Context],
+        member: discord.Member,
+        reason: str,
+        kick: bool = True,
+    ):
+        user = ctx.user if isinstance(ctx, discord.Interaction) else ctx.author
+        send = (
+            ctx.response.send_message
+            if isinstance(ctx, discord.Interaction)
+            else ctx.message.reply
         )
-        await member.kick(reason=reason)
-        return embed
-
-    @commands.command()
-    async def server_info(self, ctx):
-        await ctx.send(embed=await self._server_info(ctx.guild))
-
-    @app_commands.command(name="server_info", description="Get info about the server")
-    async def server_info_slash(self, interaction: discord.Interaction):
-        await interaction.response.send_message(
-            embed=await self._server_info(interaction.guild)
-        )
+        if member == user:
+            view = Confirm(user.id)
+            await send(
+                content=f"Are you sure you want to {'kick' if kick else 'ban'} yourself?",
+                view=view,
+            )
+            await view.wait()
+            if isinstance(ctx, discord.Interaction):
+                send = ctx.followup.send
+            if view.value is None:
+                await send(content="Timed out.")
+                return
+            elif view.value:
+                await send(embed=await self._kick_ban(ctx.guild, member, reason, kick))
+            else:
+                await send(content="Cancelled.")
+        else:
+            await send(embed=await self._kick_ban(ctx.guild, member, reason, kick))
 
     @app_commands.command(name="kick", description="Kick a member from the server")
     @app_commands.checks.has_permissions(kick_members=True)
@@ -135,44 +101,187 @@ class Mod(commands.Cog):
         member: discord.Member,
         reason: str = None,
     ):
-        if member == interaction.user:
-            view = Confirm(interaction.user.id)
-            await interaction.response.send_message(
-                "Are you sure you want to kick yourself?", view=view
-            )
-            await view.wait()
-            if view.value is None:
-                await interaction.followup.send("Timed out.")
-                return
-            elif view.value:
-                await interaction.followup.send(
-                    embed=await self._kick(interaction.guild, member, reason)
-                )
-            else:
-                await interaction.followup.send("Cancelled.")
-        else:
-            await interaction.response.send_message(
-                embed=await self._kick(interaction.guild, member, reason)
-            )
+        await self._helper_kick_ban(interaction, member, reason, True)
+
+    @app_commands.command(name="ban", description="Ban a member from the server")
+    @app_commands.checks.has_permissions(ban_members=True)
+    @app_commands.describe(member="The member to ban")
+    @app_commands.describe(reason="The reason for banning the member")
+    async def ban_slash(
+        self,
+        interaction: discord.Interaction,
+        member: discord.Member,
+        reason: str = None,
+    ):
+        await self._helper_kick_ban(interaction, member, reason, False)
 
     @commands.command()
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, member: discord.Member, *, reason: str = None):
-        if member == ctx.author:
-            view = Confirm(ctx.author.id)
-            msg = await ctx.send("Are you sure you want to kick yourself?", view=view)
-            await view.wait()
-            if view.value is None:
-                for x in view.children:
-                    x.disabled = True
-                await msg.edit(content="[**Time Out**] Are you sure you want to kick yourself?", view=view)
-                return
-            elif view.value:
-                await ctx.send(embed=await self._kick(ctx.guild, member, reason))
-            else:
-                await msg.reply(content="Cancelled.")
+        await self._helper_kick_ban(ctx, member, reason, True)
+
+    @commands.command()
+    @commands.has_permissions(ban_members=True)
+    async def ban(self, ctx, member: discord.Member, *, reason: str = None):
+        await self._helper_kick_ban(ctx, member, reason, False)
+
+    @kick_slash.error
+    @ban_slash.error
+    async def kick_ban_error(self, interaction, error):
+        cmd = "Kick" if interaction.command.name == "kick" else "Ban"
+        embed = discord.Embed(
+            title=f"{cmd} Failed", colour=discord.Colour.red(), timestamp=datetime.now()
+        )
+        embed.set_footer(
+            text=f"Requested by {interaction.user}",
+            icon_url=interaction.user.avatar.url,
+        )
+        if isinstance(error, app_commands.errors.MissingPermissions):
+            embed.description = (
+                f"You don't have the required permissions to {cmd.lower()} members!"
+            )
         else:
-            await ctx.send(embed=await self._kick(ctx.guild, member, reason))
+            embed.description = "Unknown error!"
+        await interaction.response.send_message(embed=embed)
+
+    @staticmethod
+    async def _purge(channel: Any, limit: int = 100, check=None) -> int:
+        return len(await channel.purge(limit=limit, check=check))
+
+    @staticmethod
+    def _purge_check(msg, _id):
+        return msg.author.id == _id
+
+    @commands.command(name="purge", description="Purge messages in a channel")
+    @commands.has_permissions(manage_messages=True)
+    async def purge(self, ctx, limit_n: int = 100, user: discord.User = None):
+        if user:
+            deleted = await self._purge(
+                ctx.channel, limit_n + 1, check=lambda m: self._purge_check(m, user.id)
+            )
+        else:
+            deleted = await self._purge(ctx.channel, limit_n + 1)
+        await ctx.send(f"Purged {deleted} messages!", delete_after=3)
+
+    @app_commands.command(name="purge", description="Purge messages in a channel")
+    @app_commands.checks.has_permissions(manage_messages=True)
+    @app_commands.describe(limit="The number of messages to purge")
+    async def purge_slash(
+        self,
+        interaction: discord.Interaction,
+        limit: int = 100,
+        user: discord.User = None,
+    ):
+        await interaction.response.defer()
+        if user:
+            deleted = await self._purge(
+                interaction.channel,
+                limit,
+                check=lambda m: self._purge_check(m, user.id),
+            )
+        else:
+            deleted = await self._purge(interaction.channel, limit)
+        await interaction.channel.send(f"Purged {deleted} messages!", delete_after=3)
+
+    @purge_slash.error
+    async def purge_slash_error(self, interaction, error):
+        embed = discord.Embed(
+            title="Purge Failed",
+            colour=discord.Colour.red(),
+        )
+        embed.set_footer(
+            text=f"Requested by {interaction.user}",
+            icon_url=interaction.user.avatar.url,
+        )
+        if isinstance(error, app_commands.errors.MissingPermissions):
+            embed.description = (
+                "You don't have the required permissions to purge messages!"
+            )
+        elif isinstance(error, app_commands.errors.BotMissingPermissions):
+            embed.description = (
+                "I don't have the required permissions to purge messages!"
+            )
+        else:
+            embed.description = "Unknown error!"
+        await interaction.response.send_message(embed=embed)
+
+    @staticmethod
+    async def _unban(
+        author, guild: discord.Guild, member: discord.User, reason: str = None
+    ):
+        await guild.unban(member, reason=reason)
+        embed = discord.Embed(
+            title="Unban Successful",
+            description=f"Unbanned {member.mention}!",
+            colour=discord.Colour.green(),
+            timestamp=datetime.now(),
+        )
+        embed.add_field(name="Reason", value=reason, inline=False)
+        embed.set_footer(
+            text=f"Requested by {author}",
+            icon_url=author.avatar.url,
+        )
+        return embed
+
+    @commands.command(name="unban")
+    @commands.has_permissions(ban_members=True)
+    async def unban(self, ctx, member: discord.User, *, reason: str = None):
+        try:
+            await ctx.send(embed=await self._unban(ctx.author, ctx.guild, member, reason))
+        except discord.NotFound:
+            embed = discord.Embed(
+                title="Unban Failed",
+                description="The member you tried to unban is not banned!",
+                colour=discord.Colour.red(),
+                timestamp=datetime.now(),
+            )
+            embed.set_footer(
+                text=f"Requested by {ctx.author}",
+                icon_url=ctx.author.avatar.url,
+            )
+            await ctx.send(embed=embed)
+
+    @app_commands.command(name="unban", description="Unban a member from the server")
+    @app_commands.checks.has_permissions(ban_members=True)
+    @app_commands.describe(member="The member to unban")
+    @app_commands.describe(reason="The reason for unbanning the member")
+    async def unban_slash(
+        self, interaction: discord.Interaction, member: discord.User, reason: str = None
+    ):
+        await interaction.response.send_message(
+            embed=await self._unban(interaction.user, interaction.guild, member, reason)
+        )
+
+    @unban_slash.error
+    async def unban_slash_error(self, interaction, error):
+        embed = discord.Embed(
+            title="Unban Failed",
+            colour=discord.Colour.red(),
+            timestamp=datetime.now(),
+        )
+        if isinstance(error, discord.NotFound) or isinstance(error, app_commands.CommandInvokeError):
+            embed.description = "The member you tried to unban is not banned!"
+        elif isinstance(error, app_commands.errors.MissingPermissions):
+            embed.description = (
+                "You don't have the required permissions to unban members!"
+            )
+        elif isinstance(error, app_commands.errors.BotMissingPermissions):
+            embed.description = (
+                "I don't have the required permissions to unban members!"
+            )
+        else:
+            embed.description = "Unknown error!"
+            await report_error(
+                error_webhook_url=self.bot.unknown_error_webhook_url,
+                session=self.bot.web_client,
+                error=error,
+                content="Unban Slash Command Error",
+                author=interaction.user,
+                guild=interaction.guild,
+                channel=interaction.channel,
+                username="Unknown Error || BlankBot",
+            )
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):
