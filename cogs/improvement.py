@@ -22,13 +22,20 @@ class SuggestionModal(ui.Modal, title="Suggest a feature"):
         )
         embed = discord.Embed(
             title="New Suggestion!",
-            description=f"Feature: {self.feature}\n\nDescription: " + str(self.description),
-            colour=discord.Colour.blurple()
+            description=f"Feature: {self.feature}\n\nDescription: "
+            + str(self.description),
+            colour=discord.Colour.blurple(),
         )
-        embed.set_footer(text=f"Author: {interaction.user} [{interaction.user.id}]",
-                         icon_url=interaction.user.avatar.url)
-        embed.add_field(name="Server", value=f"{interaction.guild} [{interaction.guild.id}]")
-        embed.add_field(name="Channel", value=f"{interaction.channel} [{interaction.channel.id}]")
+        embed.set_footer(
+            text=f"Author: {interaction.user} [{interaction.user.id}]",
+            icon_url=interaction.user.avatar.url,
+        )
+        embed.add_field(
+            name="Server", value=f"{interaction.guild} [{interaction.guild.id}]"
+        )
+        embed.add_field(
+            name="Channel", value=f"{interaction.channel} [{interaction.channel.id}]"
+        )
         embed.add_field(name="Timestamp", value=f"{interaction.created_at}")
         await web_hook.send(embed=embed, username="Suggestion || Webhook")
         await interaction.response.send_message(
@@ -61,9 +68,8 @@ class Improvement(commands.Cog):
 
     @commands.command(name="suggest", description="Suggest a feature for the bot!")
     async def suggest(self, ctx):
-        await ctx.send("Please use the slash command for this!")
+        await ctx.message.reply("Please use the slash command for this!")
 
 
 async def setup(bot):
     await bot.add_cog(Improvement(bot))
-
