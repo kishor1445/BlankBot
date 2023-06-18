@@ -1,14 +1,31 @@
 import asyncio
 import os
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from typing import Optional, List
 from aiohttp import ClientSession
 from dotenv import load_dotenv
 import logging
 import logging.handlers
+from pymongo import MongoClient
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.date import DateTrigger
+from datetime import datetime, timedelta
+
 
 load_dotenv()
+
+
+async def custom_prefix(bot, message):
+    if message.guild is None:
+        return "^"
+    else:
+        db = bot.cluster["guilds"]
+        collection = db["custom_prefix"]
+        data = collection.find_one({"_id": message.guild.id})
+        if data is None:
+            return "^"
+        return data["prefix"]
 
 
 class BlankBot(commands.Bot):
@@ -34,16 +51,62 @@ class BlankBot(commands.Bot):
         self.initial_extensions = initial_extensions
         self.unknown_error_webhook_url = os.getenv("UNKNOWN_ERROR_WEBHOOK_URL", "")
         self.suggestion_webhook_url = os.getenv("SUGGESTION_WEBHOOK_URL", "")
+        self.cluster = MongoClient(os.getenv("MONGO_DB_URL"))
+        self.birthday = False
+        self.scheduler = AsyncIOScheduler()
+        if datetime.now() > datetime(year=int(datetime.now().__format__('%Y')), month=6, day=11):
+            on_date = datetime(int(datetime.now().__format__('%Y')) + 1, month=6, day=11)
+        else:
+            on_date = datetime(int(datetime.now().__format__('%Y')), month=6, day=11)
+        self.scheduler.add_job(
+            self.on_birthday_party,
+            DateTrigger(
+                on_date
+            )
+        )
 
     async def setup_hook(self) -> None:
         for extension in self.initial_extensions:
             await self.load_extension(extension)
         await self.tree.sync()
-
-        
+        self.scheduler.start()
 
     async def on_ready(self):
         print(f"Logged in as {self.user} [ID: {self.user.id}]")
+
+    async def on_birthday_party(self):
+        self.birthday = True
+        self.birthday_status_update.start()
+        on_date = datetime(int(datetime.now().__format__('%Y')) + 1, 6, 11)
+        self.scheduler.add_job(
+            self.on_birthday_party,
+            DateTrigger(
+                on_date
+            )
+        )
+        self.scheduler.add_job(
+            self.off_birthday_party,
+            DateTrigger(
+                datetime.now() + timedelta(days=1)
+            )
+        )
+
+    async def off_birthday_party(self):
+        self.birthday = False
+        self.birthday_status_update.cancel()
+        await self.change_presence(
+            activity=discord.Activity(
+                name="BlankPower", type=discord.ActivityType.listening
+            )
+        )
+
+    @tasks.loop(minutes=5)
+    async def birthday_status_update(self):
+        await self.change_presence(
+            activity=discord.Game(
+                name="Today is My Birthday 🥳"
+            )
+        )
 
 
 async def main():
@@ -70,7 +133,7 @@ async def main():
             if x.endswith(".py") and not x.startswith("_")
         ]
         async with BlankBot(
-            command_prefix="^",
+            command_prefix=custom_prefix,
             web_client=our_client,
             initial_extensions=extensions,
         ) as bot:
