@@ -25,18 +25,19 @@ class SuggestionModal(ui.Modal, title="Suggest a feature"):
             description=f"Feature: {self.feature}\n\nDescription: "
             + str(self.description),
             colour=discord.Colour.blurple(),
+            timestamp=interaction.created_at,
         )
         embed.set_footer(
-            text=f"Author: {interaction.user} [{interaction.user.id}]",
+            text=f"Requested by {interaction.user}",
             icon_url=interaction.user.avatar.url,
         )
+        embed.add_field(name="User ID", value=f"{interaction.user.id}")
         embed.add_field(
             name="Server", value=f"{interaction.guild} [{interaction.guild.id}]"
         )
         embed.add_field(
             name="Channel", value=f"{interaction.channel} [{interaction.channel.id}]"
         )
-        embed.add_field(name="Timestamp", value=f"{interaction.created_at}")
         await web_hook.send(embed=embed, username="Suggestion || Webhook")
         await interaction.response.send_message(
             "Thanks for your feedback!", ephemeral=True
