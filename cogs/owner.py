@@ -22,9 +22,11 @@ class Owner(commands.Cog):
             title="Shutdown Request Received",
             description="Are you sure you want to shutdown the bot?",
             color=discord.Color.blurple(),
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
         )
-        embed.set_footer(text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url)
+        embed.set_footer(
+            text=f"Requested by {ctx.author}", icon_url=ctx.author.avatar.url
+        )
         msg = await ctx.send(embed=embed, view=view)
         await view.wait()
         if view.value is None:
