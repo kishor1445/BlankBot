@@ -14,7 +14,8 @@ async def report_error(
         timestamp=datetime.now(),
     )
     embed.add_field(name="Content", value=content)
-    embed.add_field(name="Guild", value=f"{guild} [{guild.id}]")
+    if guild:
+        embed.add_field(name="Guild", value=f"{guild} [{guild.id}]")
     embed.add_field(name="Channel", value=f"{channel} [{channel.id}]")
     embed.set_author(name=f"{author} [{author.id}]", icon_url=author.avatar.url)
     await web_hook.send(embed=embed, username=username)
