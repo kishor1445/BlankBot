@@ -88,14 +88,22 @@ class Events(commands.Cog):
                 await msg.reply(
                     "Today is not my birthday! My birthday is on 11th of June"
                 )
-
-        if (
-            DISCORD_INVITE_LINK.search(msg.content)
-            and not msg.author == msg.guild.owner
-        ):
+        dc_invite = re.search(DISCORD_INVITE_LINK, msg.content)
+        if dc_invite and not msg.author.guild_permissions.administrator:
+            db = self.bot.cluster["guilds"]
+            collection = db["link_perms"]
+            users = collection.find_one({"_id": msg.guild.id})
+            if users is not None:
+                users = users["users"]
+            else:
+                users = []
+            if msg.author.id in users:
+                return
             await msg.delete()
             await msg.channel.send(
-                f"{msg.author.mention}, you can't send discord invite links here!"
+                f"{msg.author.mention}, you can't send discord invite links here!\n"
+                f"Ask a moderator to whitelist you if you want to send discord invite "
+                f"links by using `link_perm` command."
             )
 
         msg_ = msg.content.split()[0]
