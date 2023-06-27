@@ -36,4 +36,3 @@ class Confirm(discord.ui.View):
             return True
         await interaction.response.send_message("This is not for you!", ephemeral=True)
         return False
-
