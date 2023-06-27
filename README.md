@@ -10,11 +10,11 @@ A discord bot written in python using the discord.py library.
     - [x] Ban
     - [x] Unban
     - [x] Custom prefix
-    - [x] No discord invite links
+    - [x] Link Perms
     - [ ] Mute
     - [ ] Unmute
-    - [ ] Warn
-    - [ ] Clear warnings
+    - [x] Warn
+    - [x] Clear warnings
     - [x] Purge
     - [ ] Slow mode
     - [ ] Lockdown
@@ -23,16 +23,36 @@ A discord bot written in python using the discord.py library.
     - [x] Suggestions
     - [ ] Bug reports
 - [x] Info
-    - [x] about
-    - [x] ping
+    - [x] About
+    - [x] Ping
+- [x] Converter
+    - [x] ASCII to Text
+    - [x] Text to ASCII
+    - [x] Binary to Text
+    - [x] Text to Binary
+    - [x] Hex to Text
+    - [x] Text to Hex
+    - [x] Octal to Text
+    - [x] Text to Octal
+    - [x] Base64 to Text
+    - [x] Text to Base64
+    - [x] Morse to Text
+    - [x] Text to Morse
+    - [x] Reverse Text
+    - [x] Reverse Words
+    - 
 - [x] Owner
     - [x] Sync
+    - [x] Shutdown
+    - [x] Birthday Party Activation/Deactivation
 - [x] Utilities
     - [x] Say
     - [x] Server Info
 - [x] Events
     - [x] On mentioning the bot, it will reply with the current prefix for the server
-    - [x] auto report unknown errors through a webhook
+    - [x] Auto report unknown errors through a webhook
+    - [x] Bot birthday party
+    - [x] No discord invite links
 
 ## Installation
 1. Clone the repository using 
