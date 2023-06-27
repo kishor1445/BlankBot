@@ -1,6 +1,7 @@
 import asyncio
 import os
 import discord
+import pyfiglet
 from discord.ext import commands, tasks
 from typing import Optional, List
 from aiohttp import ClientSession
@@ -11,6 +12,7 @@ from pymongo import MongoClient
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
 from datetime import datetime, timedelta
+from colorama import Fore
 
 
 load_dotenv()
@@ -54,18 +56,20 @@ class BlankBot(commands.Bot):
         self.cluster = MongoClient(os.getenv("MONGO_DB_URL"))
         self.birthday = False
         self.scheduler = AsyncIOScheduler()
-        if datetime.now() > datetime(year=int(datetime.now().__format__('%Y')), month=6, day=11):
-            on_date = datetime(int(datetime.now().__format__('%Y')) + 1, month=6, day=11)
-        else:
-            on_date = datetime(int(datetime.now().__format__('%Y')), month=6, day=11)
-        self.scheduler.add_job(
-            self.on_birthday_party,
-            DateTrigger(
-                on_date
+        if datetime.now() > datetime(
+            year=int(datetime.now().__format__("%Y")), month=6, day=11
+        ):
+            on_date = datetime(
+                int(datetime.now().__format__("%Y")) + 1, month=6, day=11
             )
-        )
+        else:
+            on_date = datetime(int(datetime.now().__format__("%Y")), month=6, day=11)
+        self.scheduler.add_job(self.on_birthday_party, DateTrigger(on_date))
 
     async def setup_hook(self) -> None:
+        print(
+            f"{Fore.LIGHTBLUE_EX}{pyfiglet.figlet_format(f'{self.user.name}', 'poison')}"
+        )
         for extension in self.initial_extensions:
             await self.load_extension(extension)
         await self.tree.sync()
@@ -77,18 +81,10 @@ class BlankBot(commands.Bot):
     async def on_birthday_party(self):
         self.birthday = True
         self.birthday_status_update.start()
-        on_date = datetime(int(datetime.now().__format__('%Y')) + 1, 6, 11)
+        on_date = datetime(int(datetime.now().__format__("%Y")) + 1, 6, 11)
+        self.scheduler.add_job(self.on_birthday_party, DateTrigger(on_date))
         self.scheduler.add_job(
-            self.on_birthday_party,
-            DateTrigger(
-                on_date
-            )
-        )
-        self.scheduler.add_job(
-            self.off_birthday_party,
-            DateTrigger(
-                datetime.now() + timedelta(days=1)
-            )
+            self.off_birthday_party, DateTrigger(datetime.now() + timedelta(days=1))
         )
 
     async def off_birthday_party(self):
@@ -102,11 +98,7 @@ class BlankBot(commands.Bot):
 
     @tasks.loop(minutes=5)
     async def birthday_status_update(self):
-        await self.change_presence(
-            activity=discord.Game(
-                name="Today is My Birthday 🥳"
-            )
-        )
+        await self.change_presence(activity=discord.Game(name="Today is My Birthday 🥳"))
 
 
 async def main():
