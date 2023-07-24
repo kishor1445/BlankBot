@@ -573,6 +573,12 @@ class Mod(commands.Cog):
             )
         await interaction.response.send_message(embed=embed)
 
+    @commands.command(name="slowmode", aliases=("sm", "slowm", "smode"))
+    @commands.has_permissions(manage_channels=True)
+    async def slow_mode(self, ctx, seconds: int):
+        await ctx.channel.edit(slowmode_delay=seconds)
+        await ctx.send(f"Slow mode in this channel set to {seconds} seconds!")
+
 
 async def setup(bot):
     await bot.add_cog(Mod(bot))
