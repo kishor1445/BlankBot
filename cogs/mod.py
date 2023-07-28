@@ -1,10 +1,12 @@
-import discord
-from discord.ext import commands
-from discord import app_commands
 from datetime import datetime
 from typing import Any, Union
-from .Utils.report import report_error
+
+import discord
+from discord import app_commands
+from discord.ext import commands
+
 from .Utils.buttons import Confirm
+from .Utils.report import report_error
 
 
 class Mod(commands.Cog):
@@ -573,11 +575,61 @@ class Mod(commands.Cog):
             )
         await interaction.response.send_message(embed=embed)
 
+    async def _slow_mode(
+        self, ctx: Union[discord.Interaction, commands.Context], seconds: int
+    ) -> str:
+        if seconds < 0:
+            return "Slow mode can't be negative seconds!"
+        await ctx.channel.edit(slowmode_delay=seconds)
+        if seconds == 0:
+            return "Slow mode in this channel has been disabled!"
+        else:
+            return f"Slow mode in this channel set to {seconds} seconds!"
+
     @commands.command(name="slowmode", aliases=("sm", "slowm", "smode"))
     @commands.has_permissions(manage_channels=True)
     async def slow_mode(self, ctx, seconds: int):
-        await ctx.channel.edit(slowmode_delay=seconds)
-        await ctx.send(f"Slow mode in this channel set to {seconds} seconds!")
+        await ctx.send(await self._slow_mode(ctx, seconds))
+
+    @app_commands.command(
+        name="slowmode",
+        description="Set the slow mode of a channel",
+    )
+    @app_commands.checks.has_permissions(manage_channels=True)
+    @app_commands.describe(seconds="The amount of seconds to set the slow mode to")
+    async def slow_mode_slash(self, interaction: discord.Interaction, seconds: int):
+        await interaction.response.send_message(
+            await self._slow_mode(interaction, seconds)
+        )
+
+    @slow_mode_slash.error
+    async def slow_mode_slash_error(self, interaction, error):
+        embed = discord.Embed(
+            title="Slow Mode Failed",
+            colour=discord.Colour.red(),
+            timestamp=datetime.now(),
+        )
+        if isinstance(error, app_commands.errors.MissingPermissions):
+            embed.description = (
+                "You don't have the required permissions to set slow mode!"
+            )
+        elif isinstance(error, app_commands.errors.BotMissingPermissions):
+            embed.description = (
+                "I don't have the required permissions to set slow mode!"
+            )
+        else:
+            embed.description = "Unknown error!"
+            await report_error(
+                error_webhook_url=self.bot.unknown_error_webhook_url,
+                session=self.bot.web_client,
+                error=error,
+                content="Slow Mode Slash Command Error",
+                author=interaction.user,
+                guild=interaction.guild,
+                channel=interaction.channel,
+                username="Unknown Error || BlankBot",
+            )
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):
