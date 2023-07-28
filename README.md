@@ -16,9 +16,10 @@ A discord bot written in python using the discord.py library.
     - [x] Warn
     - [x] Clear warnings
     - [x] Purge
-    - [ ] Slow mode
+    - [x] Slow mode
     - [ ] Lockdown
     - [ ] Unlock-down
+    - [ ] Embed Message
 - [x] Improvement
     - [x] Suggestions
     - [ ] Bug reports
@@ -40,7 +41,6 @@ A discord bot written in python using the discord.py library.
     - [x] Text to Morse
     - [x] Reverse Text
     - [x] Reverse Words
-    - 
 - [x] Owner
     - [x] Sync
     - [x] Shutdown
@@ -70,5 +70,22 @@ MONGO_DB_URL=your mongodb url
 ```
 4. Run the bot using `python bot.py`
 5. Enjoy!
+
+
+## FAQ
+### How to fix SSL: CERTIFICATE_VERIFY_FAILED error? (macOS)
+1. Open `/Applications/Python 3.x/`
+2. Double click on `Install Certificates.command`
+3. Restart your terminal
+4. Done!
+
+### How to get Discord Bot Token?
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Create a new application
+3. Go to the bot tab
+4. Click on `Add Bot`
+5. Copy the token
+6. Done!\
+**Note:** Never share your token with anyone, keep it safe!
 
 If you like this project, please consider giving it a star ⭐ <3
