@@ -88,8 +88,8 @@ class BlankBot(commands.Bot):
             f"[magenta]{pyfiglet.figlet_format(f'{self.user.name}', 'poison')}[/magenta]"
         )
         CONSOLE.print(
-            f"[magenta]\t\tBlankBot copyright under: MIT License[/magenta]\t\t\n" +
-            f"[magenta]\t\tCopyright © 2023 Kishor Ramanan\t\t\t"
+            f"[magenta]\t\tBlankBot copyright under: MIT License[/magenta]\t\t\n"
+            + f"[magenta]\t\tCopyright © 2023 Kishor Ramanan\t\t\t"
         )
         extensions = [
             f"cogs.{x[:-3]}"
@@ -106,7 +106,9 @@ class BlankBot(commands.Bot):
         Called when the bot successfully connects to discord
         :return:
         """
-        CONSOLE.print(f"[bold green][✓] Successfully Logged In as {self.user} [ID: {self.user.id}]![/bold green]")
+        CONSOLE.print(
+            f"[bold green][✓] Successfully Logged In as {self.user} [ID: {self.user.id}]![/bold green]"
+        )
 
     async def on_birthday_party(self):
         """
@@ -153,7 +155,9 @@ def update() -> None:
         sp.check_call(["git", "pull"])  # nosec: B603, B607
     except sp.CalledProcessError:
         CONSOLE.print("[bold red]Update Failed![/bold red]")
-        CONSOLE.print("[bold red] [!] Please ensure that you have git installed![/bold red]")
+        CONSOLE.print(
+            "[bold red] [!] Please ensure that you have git installed![/bold red]"
+        )
         return
     CONSOLE.print("[bold green][✓] Update Successful![/bold green]")
     CONSOLE.print("[bold blue]Restarting BlankBot...[/bold blue]")
@@ -188,9 +192,7 @@ def install_requirements() -> None:
     """
     CONSOLE.print("[bold blue]Installing requirements...[/bold blue]")
     try:
-        sp.check_call(
-            ["pip", "install", "-r", "requirements.txt"]
-        )  # nosec: B603, B607
+        sp.check_call(["pip", "install", "-r", "requirements.txt"])  # nosec: B603, B607
     except sp.CalledProcessError:
         CONSOLE.print("[bold red]Installation Failed![/bold red]")
         return
