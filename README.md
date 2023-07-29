@@ -17,8 +17,8 @@ A discord bot written in python using the discord.py library.
     - [x] Clear warnings
     - [x] Purge
     - [x] Slow mode
-    - [ ] Lockdown
-    - [ ] Unlock-down
+    - [x] Lockdown
+    - [x] Unlock-down
     - [ ] Embed Message
 - [x] Improvement
     - [x] Suggestions

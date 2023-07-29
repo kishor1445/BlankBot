@@ -575,8 +575,9 @@ class Mod(commands.Cog):
             )
         await interaction.response.send_message(embed=embed)
 
+    @staticmethod
     async def _slow_mode(
-        self, ctx: Union[discord.Interaction, commands.Context], seconds: int
+        ctx: Union[discord.Interaction, commands.Context], seconds: int
     ) -> str:
         if seconds < 0:
             return "Slow mode can't be negative seconds!"
@@ -630,6 +631,102 @@ class Mod(commands.Cog):
                 username="Unknown Error || BlankBot",
             )
         await interaction.response.send_message(embed=embed)
+
+    @staticmethod
+    async def _lockdown(
+        ctx: Union[discord.Interaction, commands.Context],
+        _all: bool = False,
+        action: bool = True,
+    ):
+        typing = ctx.typing if isinstance(ctx, commands.Context) else ctx.channel.typing
+        async with typing():
+            try:
+                roles = [
+                    role
+                    for role in ctx.guild.roles
+                    if not role.permissions.administrator
+                    or role.permissions.manage_channels
+                ]
+                override = discord.PermissionOverwrite()
+                override.send_messages = not action
+                if _all:
+                    channels = ctx.guild.channels
+                else:
+                    channels = [ctx.channel]
+                for channel in channels:
+                    for role in roles:
+                        if channel.permissions_for(role).view_channel:
+                            await channel.set_permissions(role, overwrite=override)
+                return f"Channel{'s' if _all else ''} {'un' if not action else ''}locked down!"
+            except discord.Forbidden:
+                return (
+                    "I don't have the required permissions to lock down this channel!"
+                )
+
+    @commands.command(name="lockdown", aliases=("ld", "lock"))
+    @commands.has_permissions(manage_channels=True)
+    async def lockdown(self, ctx, _all: str = ""):
+        _all = _all.lower() == "all"
+        await ctx.send(await self._lockdown(ctx, _all=_all))
+
+    @app_commands.command(
+        name="lockdown",
+        description="Lock down a channel",
+    )
+    @app_commands.checks.has_permissions(manage_channels=True)
+    @app_commands.describe(_all="Whether to lock down all channels")
+    async def lockdown_slash(
+        self, interaction: discord.Interaction, _all: bool = False
+    ):
+        await interaction.response.defer()
+        await interaction.followup.send(await self._lockdown(interaction, _all=_all))
+
+    @lockdown_slash.error
+    async def lockdown_slash_error(self, interaction, error):
+        embed = discord.Embed(
+            title="Lockdown Failed",
+            colour=discord.Colour.red(),
+            timestamp=datetime.now(),
+        )
+        if isinstance(error, app_commands.errors.MissingPermissions):
+            embed.description = (
+                "You don't have the required permissions to lockdown this channel!"
+            )
+        elif isinstance(error, app_commands.errors.BotMissingPermissions):
+            embed.description = (
+                "I don't have the required permissions to lockdown this channel!"
+            )
+        else:
+            embed.description = "Unknown error!"
+            await report_error(
+                error_webhook_url=self.bot.unknown_error_webhook_url,
+                session=self.bot.web_client,
+                error=error,
+                content="Lockdown Slash Command Error",
+                author=interaction.user,
+                guild=interaction.guild,
+                channel=interaction.channel,
+                username="Unknown Error || BlankBot",
+            )
+        await interaction.response.send_message(embed=embed)
+
+    @commands.command(name="unlockdown", aliases=("uld", "unlock"))
+    @commands.has_permissions(manage_channels=True)
+    async def unlockdown(self, ctx, _all: str = ""):
+        _all = _all.lower() == "all"
+        await ctx.send(await self._lockdown(ctx, _all, False))
+
+    @app_commands.command(
+        name="unlockdown",
+        description="Unlock a channel",
+    )
+    @app_commands.checks.has_permissions(manage_channels=True)
+    @app_commands.describe(_all="Whether to unlock all channels")
+    async def unlockdown_slash(
+        self, interaction: discord.Interaction, _all: bool = False
+    ):
+        await interaction.response.defer()
+        await interaction.followup.send(await self._lockdown(interaction, _all, False))
 
 
 async def setup(bot):
