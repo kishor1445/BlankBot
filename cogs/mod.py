@@ -39,18 +39,19 @@ class Mod(commands.Cog):
         kick: bool = True,
     ):
         embed = discord.Embed(
-            title=f"{'Kicked' if kick else 'Banned'} Successfully",
+            title=f"{'Kicked' if kick else 'Banned'} Failed",
             colour=discord.Colour.red(),
             timestamp=datetime.now(),
         )
         if member == guild.owner:
             embed.description = (
-                f"You can't {'kick' if kick else 'ban'} the owner of the server!"
+                f"You can't {'kick' if kick else 'ban'} the owner of this server!"
             )
             return embed
         if member == self.bot.user:
             embed.description = f"I can't {'kick' if kick else 'ban'} myself! :("
             return embed
+        embed.title = f"{'Kicked' if kick else 'Banned'} Successfully"
         embed.description = f"{'Kicked' if kick else 'Banned'} {member} for {reason}"
         embed.colour = discord.Colour.green()
         if kick:
