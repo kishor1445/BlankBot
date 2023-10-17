@@ -6,8 +6,8 @@ A discord bot written in python using the discord.py library.
 
 ## Features
 - [x] Machine Learning Module
-      - [x] Sentimental Analysis
-      - [x] Image Detection
+    - [x] Image Detection
+    - [x] Sentimental Analysis
 - [x] Moderation
     - [x] Kick
     - [x] Ban
