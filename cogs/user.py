@@ -9,7 +9,7 @@ class User(commands.Cog):
     @commands.command(name="avatar", aliases=["av"])
     async def avatar(self, ctx, user: discord.User = None):
         user = user or ctx.author
-        await ctx.send(user.avatar.url)
+        await ctx.send(user.display_avatar.url)
 
 
 async def setup(bot):

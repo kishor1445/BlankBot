@@ -5,3 +5,4 @@ venv/
 logs/
 *.pyc
 *.log
+discord.log

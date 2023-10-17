@@ -1,8 +1,17 @@
 import asyncio
 import discord
 import re
+from datetime import datetime
 from discord.ext import commands
 from .Utils.report import report_error
+from transformers import pipeline
+
+sentiment_pipeline = pipeline(
+    "sentiment-analysis",
+    model="distilbert-base-uncased-finetuned-sst-2-english",
+    revision="af0f99b",
+)
+
 
 DISCORD_INVITE_LINK = re.compile(
     r"(?:https?://)?discord(?:(?:app)?\.com/invite|\.gg)/?[a-zA-Z0-9]+/?"
@@ -116,6 +125,30 @@ class Events(commands.Cog):
             else:
                 prefix = data["prefix"]
             await msg.reply(f"My prefix for this server is `{prefix}`")
+
+        db = self.bot.cluster["guilds"]
+        collection = db["sentimental"]
+        data = collection.find_one({"_id": msg.channel.id})
+        if data:
+            destination = data["destination"]["channel_id"]
+            channel = await msg.guild.fetch_channel(destination)
+            analysis = sentiment_pipeline(msg.content)[0]["label"]
+            embed = discord.Embed(
+                title=f"{msg.author.name}'s Analysis",
+                description=f"Message: {msg.content}",
+                timestamp=datetime.now(),
+                color=discord.Color.red(),
+            )
+            embed.add_field(name="Status", value=analysis)
+            if analysis == "NEGATIVE":
+                await channel.send(embed=embed)
+                user_channel = msg.author.dm_channel
+                if user_channel is None:
+                    user_channel = await msg.author.create_dm()
+                msg = await user_channel.send(embed=embed)
+                await msg.reply(
+                    "Sorry for the inconvenience. We will do our best to fix your problem!"
+                )
 
 
 async def setup(bot):

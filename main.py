@@ -48,7 +48,6 @@ class BlankBot(commands.Bot):
     """
     BlankBot class to initialize the bot
     """
-
     console = CONSOLE
     unknown_error_webhook_url = os.getenv("UNKNOWN_ERROR_WEBHOOK_URL", "")
     suggestion_webhook_url = os.getenv("SUGGESTION_WEBHOOK_URL", "")
@@ -72,6 +71,7 @@ class BlankBot(commands.Bot):
         self.web_client = web_client
         self.birthday = False
         self.scheduler = AsyncIOScheduler()
+        self.sentimental_analysis_guild_id = []
         if datetime.now() > datetime(
             year=int(datetime.now().__format__("%Y")), month=6, day=11
         ):
@@ -86,10 +86,6 @@ class BlankBot(commands.Bot):
         os.system("cls" if os.name == "nt" else "clear")
         CONSOLE.print(
             f"[magenta]{pyfiglet.figlet_format(f'{self.user.name}', 'poison')}[/magenta]"
-        )
-        CONSOLE.print(
-            f"[magenta]\t\tBlankBot copyright under: MIT License[/magenta]\t\t\n"
-            + f"[magenta]\t\tCopyright © 2023 Kishor Ramanan\t\t\t"
         )
         extensions = [
             f"cogs.{x[:-3]}"
@@ -107,7 +103,8 @@ class BlankBot(commands.Bot):
         :return:
         """
         CONSOLE.print(
-            f"[bold green][✓] Successfully Logged In as {self.user} [ID: {self.user.id}]![/bold green]"
+            "[bold green][✓] Successfully Logged "
+            + f"In as {self.user} [ID: {self.user.id}]! [/bold green]"
         )
 
     async def on_birthday_party(self):
@@ -145,44 +142,52 @@ class BlankBot(commands.Bot):
         await self.change_presence(activity=discord.Game(name="Today is My Birthday 🥳"))
 
 
-def update() -> None:
+def update() -> bool:
     """
     Updates the BlankBot using git and restarts the BlankBot
     :return:
     """
-    CONSOLE.print("[bold blue]Updating BlankBot...[/bold blue]")
-    try:
-        sp.check_call(["git", "pull"])  # nosec: B603, B607
-    except sp.CalledProcessError:
-        CONSOLE.print("[bold red]Update Failed![/bold red]")
-        CONSOLE.print(
-            "[bold red] [!] Please ensure that you have git installed![/bold red]"
-        )
-        return
-    CONSOLE.print("[bold green][✓] Update Successful![/bold green]")
-    CONSOLE.print("[bold blue]Restarting BlankBot...[/bold blue]")
-    os.execv(sys.executable, ["python"] + sys.argv)  # nosec: B606
+    with CONSOLE.status(
+        "[bold blue]Updating BlankBot...[/bold blue]",
+        spinner="material",
+        spinner_style="blue",
+    ):
+        try:
+            sp.check_call(["git", "pull"])  # nosec: B603, B607
+        except sp.CalledProcessError:
+            CONSOLE.print("[bold red]Update Failed![/bold red]")
+            CONSOLE.print(
+                "[bold red] [!] Please ensure that you have git installed![/bold red]"
+            )
+            return False
+        CONSOLE.print("[bold green][✓] Update Successful![/bold green]")
+    return True
 
 
-def check_update() -> None:
+def check_update() -> bool:
     """
     Checks for BlankBot updates using version.txt
     :return:
     """
-    CONSOLE.print("[bold blue]Checking for updates...[/bold blue]")
-    with open("version.txt", encoding="utf-8") as version_file:
-        version = version_file.read()
-    if (
-        version.strip()
-        >= requests.get(
-            "https://raw.githubusercontent.com/Kishor1445/BlankBot/main/version.txt",
-            timeout=10,
-        ).text.strip()
+    with CONSOLE.status(
+        "[bold blue]Checking for updates...[/bold blue]",
+        spinner="dots",
+        spinner_style="blue",
     ):
-        CONSOLE.print("[bold green][✓] No New Update Available[/bold green]")
-    else:
-        CONSOLE.print("[bold purple][!] New Update Available[/bold purple]")
-        update()
+        with open("version.txt", encoding="utf-8") as version_file:
+            version = version_file.read()
+            if (
+                version.strip()
+                >= requests.get(
+                    "https://raw.githubusercontent.com/Kishor1445/BlankBot/main/version.txt",
+                    timeout=10,
+                ).text.strip()
+            ):
+                CONSOLE.print("[bold green][✓] No New Update Available[/bold green]")
+                return False
+            else:
+                CONSOLE.print("[bold purple][!] New Update Available[/bold purple]")
+                return True
 
 
 def install_requirements() -> None:
@@ -190,13 +195,21 @@ def install_requirements() -> None:
     Installs BlankBot requirements using pip
     :return:
     """
-    CONSOLE.print("[bold blue]Installing requirements...[/bold blue]")
-    try:
-        sp.check_call(["pip", "install", "-r", "requirements.txt"])  # nosec: B603, B607
-    except sp.CalledProcessError:
-        CONSOLE.print("[bold red]Installation Failed![/bold red]")
-        return
-    CONSOLE.print("[bold green][✓] Installation Successful![/bold green]")
+    with CONSOLE.status(
+        "[bold blue]Installing requirements...[/bold blue]",
+        spinner="dots12",
+        spinner_style="blue",
+    ):
+        try:
+            sp.check_call(
+                ["pip", "install", "-r", "requirements.txt"],
+                stdout=sp.DEVNULL,
+                stderr=sp.DEVNULL,
+            )  # nosec: B603, B607
+        except sp.CalledProcessError:
+            CONSOLE.print("[bold red]Installation Failed![/bold red]")
+            return
+        CONSOLE.print("[bold green][✓] Installation Successful![/bold green]")
 
 
 async def main():
@@ -204,8 +217,11 @@ async def main():
     Main function to initialize and start the BlankBot
     :return:
     """
-    check_update()
-    install_requirements()
+    if check_update():
+        if update():
+            install_requirements()
+            CONSOLE.print("[bold blue]Restarting BlankBot...[/bold blue]")
+            os.execv(sys.executable, ["python"] + sys.argv)  # nosec: B606
     logger = logging.getLogger("discord")
     logger.setLevel(logging.INFO)
 
@@ -236,4 +252,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         CONSOLE.print("\n[bold red]Keyboard Interrupt Detected![/bold red]")
         CONSOLE.print("[bold blue]Exiting...[/bold blue]")
-        exit(0)
+        sys.exit(0)

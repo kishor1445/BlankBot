@@ -42,12 +42,9 @@ class Info(commands.Cog):
     def _about(self, ctx: Union[discord.Interaction, commands.Context]):
         dev = self.bot.get_user(int(os.getenv("BOT_OWNER_ID")))
         user = ctx.user if isinstance(ctx, discord.Interaction) else ctx.author
-        bot_avatar_url = (
-            self.bot.user.avatar.url if self.bot.user.avatar is not None else None
-        )
         embed = (
             discord.Embed(
-                title="About",
+                title=f"About {self.bot.user.name}",
                 description=f"A discord bot made using discord.py [{discord.__version__}]",
                 color=discord.Color.blue(),
                 timestamp=datetime.now(),
@@ -65,9 +62,8 @@ class Info(commands.Cog):
                 text=f"Requested by {user}",
                 icon_url=user.avatar.url,
             )
+            .set_thumbnail(url=self.bot.user.display_avatar.url)
         )
-        if bot_avatar_url:
-            embed.set_thumbnail(url=bot_avatar_url)
         return embed
 
     @commands.command()
