@@ -5,6 +5,9 @@ A discord bot written in python using the discord.py library.
 > Our aim is to make a bot that can do everything you need it to do, and more.
 
 ## Features
+- [x] Machine Learning Module
+    - [x] Image Detection
+    - [x] Sentimental Analysis
 - [x] Moderation
     - [x] Kick
     - [x] Ban
